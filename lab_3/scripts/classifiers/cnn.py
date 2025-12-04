@@ -63,7 +63,16 @@ class ThreeLayerConvNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        C, H, W = input_dim
+        self.params['W1'] = weight_scale * np.random.randn(num_filters, C, filter_size, filter_size)
+        self.params['b1'] = np.zeros(num_filters)
+        
+        flat_dim = num_filters * (H // 2) * (W // 2)
+        self.params['W2'] = weight_scale * np.random.randn(flat_dim, hidden_dim)
+        self.params['b2'] = np.zeros(hidden_dim)
+        
+        self.params['W3'] = weight_scale * np.random.randn(hidden_dim, num_classes)
+        self.params['b3'] = np.zeros(num_classes)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -102,7 +111,9 @@ class ThreeLayerConvNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        crp_out, crp_cache = conv_relu_pool_forward(X, W1, b1, conv_param, pool_param)
+        ar_out, ar_cache = affine_relu_forward(crp_out, W2, b2)
+        scores, af_cache = affine_forward(ar_out, W3, b3)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -125,7 +136,19 @@ class ThreeLayerConvNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        loss, dscores = softmax_loss(scores, y)
+        loss += 0.5 * self.reg * (np.sum(W1**2) + np.sum(W2**2) + np.sum(W3**2))
+        
+        dar_out, dW3, db3 = affine_backward(dscores, af_cache)
+        dcrp_out, dW2, db2 = affine_relu_backward(dar_out, ar_cache)
+        dx, dW1, db1 = conv_relu_pool_backward(dcrp_out, crp_cache)
+        
+        grads['W3'] = dW3 + self.reg * W3
+        grads['b3'] = db3
+        grads['W2'] = dW2 + self.reg * W2
+        grads['b2'] = db2
+        grads['W1'] = dW1 + self.reg * W1
+        grads['b1'] = db1
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
